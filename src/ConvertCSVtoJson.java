@@ -1,26 +1,16 @@
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import opencsv.utils.CsvMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.awt.*;
 import java.io.*;
-import java.lang.reflect.Array;
 import java.util.*;
-import java.util.List;
 
 public class ConvertCSVtoJson {
 
+    // считываем .csv файл в ArrayList
     public ArrayList readCsvFile(String fileWay) throws IOException {
 
         BufferedReader fileReader = null;
@@ -53,9 +43,42 @@ public class ConvertCSVtoJson {
         return flights;
     }
 
+    // конвертируем ArrayList в JSONArray
     public JSONArray convertJavaObjectToJsonArray(ArrayList flights) throws JsonProcessingException {
 
-        JSONArray flightsJson = new JSONArray(flights);
-        return flightsJson;
+        return new JSONArray(flights);
     }
-}
+
+    // конвертируем строку в формат времени HH:mm
+    public String convertStringToDateFormat (Object jsonObj) {
+
+        String res = null;
+        int hours = 0;
+        int minutes = 0;
+
+        if( jsonObj.toString().length() == 4) {
+             hours = Integer.parseInt(jsonObj.toString())/100;
+             minutes = Integer.parseInt(jsonObj.toString())%100;
+             res = hours + ":" + minutes;
+        }
+        else {
+             hours = Integer.parseInt(jsonObj.toString())/100;
+             minutes = Integer.parseInt(jsonObj.toString())%100;
+             res = "0" + hours + ":" + minutes;
+        }
+
+        return res;
+        }
+
+        // проверяем, есть ли элемент в базе
+        public String checkElementInBase (String nameOfElement, String element, JSONArray jsonArray) {
+
+            String isElementHere = null;
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject obj = jsonArray.getJSONObject(i);
+                if (obj.get(nameOfElement).equals(element)) isElementHere = element;
+            }
+            return isElementHere;
+        }
+    }

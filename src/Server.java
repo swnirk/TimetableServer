@@ -1,29 +1,26 @@
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 
 public class Server {
 
-    public static void main(String[] args) {
+    public static final String fileWay = "C:\\Users\\79651\\Desktop\\timetable.csv";
+
+    public static void main(String[] args) throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(8080)) {
             System.out.println("Server started!");
 
             while (true) {
+
                 // ожидаем подключения
                 Socket socket = serverSocket.accept();
                 System.out.println("Client connected!");
@@ -36,29 +33,41 @@ public class Server {
                     // ждем первой строки запроса
                     while (!input.ready()) ;
 
-                    // считываем и печатаем все что было отправлено клиентом
+                    // считываем и печатаем запрос клиента, определяем id рейса
                     System.out.println();
                     String request = input.readLine();
                     System.out.println(request);
                     String id = request.split("/")[2].split(" ")[0];
 
+
                     ConvertCSVtoJson convert = new ConvertCSVtoJson();
-                    ArrayList fltArray = new ArrayList();
-                    fltArray = convert.readCsvFile("C:\\Users\\79651\\Desktop\\timetable.csv");
-                    JSONArray fltArrayJson = new JSONArray();
-                    fltArrayJson = convert.convertJavaObjectToJsonArray(fltArray);
-                    for (int i = 0; i < fltArrayJson.length(); i++) {
-                        JSONObject fltObj = fltArrayJson.getJSONObject(i);
-                        if (fltObj.get("id").equals(id)) {
-                            output.println("HTTP/1.1 200 OK");
-                            output.println("Content-Type: text/html; charset=utf-8");
-                            output.println();
-                            output.println("<p>Your flight is </p>" + fltObj.get("number"));
-                            output.println("<p>Departure time is </p>" + fltObj.get("departureTime"));
-                            output.println("<p>Arrival time is </p>" + fltObj.get("arrivalTime"));
-                        }
+                    ArrayList fltArray = convert.readCsvFile(fileWay);
+                    JSONArray fltArrayJson = convert.convertJavaObjectToJsonArray(fltArray);
+
+                    // проверяем, есть ли такой id в базе
+                    String isIdHere = convert.checkElementInBase("id",id, fltArrayJson);
+
+                    // если нет id в базе нет, то сообщаем об этом
+                    if (isIdHere == null) {
+                        output.println("HTTP/1.1 200 OK");
+                        output.println("Content-Type: text/html; charset=utf-8");
+                        output.println();
+                        output.println("<p>ID not found! Please, chek id and enter again.</p>");
                     }
 
+                    // вывод Departure time и Arrival time в соответсвии с id, введенным клиентом
+                    for (int i = 0; i < fltArrayJson.length(); i++) {
+
+                            JSONObject fltObj = fltArrayJson.getJSONObject(i);
+                            if (fltObj.get("id").equals(id)) {
+                                output.println("HTTP/1.1 200 OK");
+                                output.println("Content-Type: text/html; charset=utf-8");
+                                output.println();
+                                output.println("<p>Your flight is: </p>" + fltObj.get("number"));
+                                output.println("<p>Departure time is: </p>" + convert.convertStringToDateFormat(fltObj.get("departureTime")));
+                                output.println("<p>Arrival time is: </p>" + convert.convertStringToDateFormat(fltObj.get("arrivalTime")));
+                            }
+                        }
                     output.flush();
 
                     // по окончанию выполнения блока try-with-resources потоки,

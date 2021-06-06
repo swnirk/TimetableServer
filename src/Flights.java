@@ -1,7 +1,5 @@
 import org.json.JSONObject;
 
-import java.lang.ref.SoftReference;
-
 public class Flights {
 
     private String id;
