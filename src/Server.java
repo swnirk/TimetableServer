@@ -1,3 +1,5 @@
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -10,20 +12,22 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Server {
 
     public static final String fileWay = "C:\\Users\\79651\\Desktop\\timetable.csv";
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     public static void main(String[] args) throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(8080)) {
-            System.out.println("Server started!");
+            System.out.println(GSON.toJson("Server started!"));
 
             while (true) {
 
                 // ожидаем подключения
                 Socket socket = serverSocket.accept();
-                System.out.println("Client connected!");
+                System.out.println(GSON.toJson("Client connected!"));
 
                 // для подключившегося клиента открываем потоки
                 // чтения и записи
@@ -36,9 +40,8 @@ public class Server {
                     // считываем и печатаем запрос клиента, определяем id рейса
                     System.out.println();
                     String request = input.readLine();
-                    System.out.println(request);
+                    System.out.println(GSON.toJson(request));
                     String id = request.split("/")[2].split(" ")[0];
-
 
                     ConvertCSVtoJson convert = new ConvertCSVtoJson();
                     ArrayList fltArray = convert.readCsvFile(fileWay);
@@ -47,9 +50,9 @@ public class Server {
                     // проверяем, есть ли такой id в базе
                     String isIdHere = convert.checkElementInBase("id",id, fltArrayJson);
 
-                    // если нет id в базе нет, то сообщаем об этом
+                    // если id в базе нет, то сообщаем об этом
                     if (isIdHere == null) {
-                        output.println("HTTP/1.1 200 OK");
+                        output.println(GSON.toJson("HTTP/1.1 404"));
                         output.println("Content-Type: text/html; charset=utf-8");
                         output.println();
                         output.println("<p>ID not found! Please, chek id and enter again.</p>");
@@ -60,7 +63,7 @@ public class Server {
 
                             JSONObject fltObj = fltArrayJson.getJSONObject(i);
                             if (fltObj.get("id").equals(id)) {
-                                output.println("HTTP/1.1 200 OK");
+                                output.println(GSON.toJson("HTTP/1.1 200 OK"));
                                 output.println("Content-Type: text/html; charset=utf-8");
                                 output.println();
                                 output.println("<p>Your flight is: </p>" + fltObj.get("number"));
@@ -72,7 +75,7 @@ public class Server {
 
                     // по окончанию выполнения блока try-with-resources потоки,
                     // а вместе с ними и соединение будут закрыты
-                    System.out.println("Client disconnected!");
+                    System.out.println(GSON.toJson("Client disconnected!"));
                 }
             }
         } catch (IOException ex) {
